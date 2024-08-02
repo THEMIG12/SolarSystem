@@ -5,6 +5,10 @@ public class PlanetaryGravity : MonoBehaviour
 {
     public float gravityStrength = 9.8f; // Strength of the gravitational pull
 
+    void OnCollisionEnter()
+    {
+        Destroy(gameObject);
+    }
 
     void OnTriggerStay(Collider other)
     {

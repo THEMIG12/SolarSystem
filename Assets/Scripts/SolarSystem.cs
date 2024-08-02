@@ -6,10 +6,15 @@ using UnityEngine;
 public class SolarSystem : MonoBehaviour
 {
     public float G = 100f;
+    public float RDays = 1f;
+    public float RHours = 1f;
+    public float RSpeed = 1f;
     public GameObject[] solar;
 
     void Awake()
     {
+        RHours += RDays * 24f;
+        RSpeed = RHours * 3600f / 86400f;
         solar = GameObject.FindGameObjectsWithTag("Solar");
     }
 
@@ -21,6 +26,7 @@ public class SolarSystem : MonoBehaviour
     void FixedUpdate()
     {
         Gravity();
+        transform.RotateAround(transform.position, Vector3.up, RSpeed * Time.deltaTime);
     }
 
     void Gravity()
