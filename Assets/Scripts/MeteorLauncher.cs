@@ -3,12 +3,16 @@ using UnityEngine;
 
 public class MeteorLauncher : MonoBehaviour
 {
-    public GameObject meteorPrefab;  // Reference to the meteor prefab
-    public float minSize = 0.5f;     // Minimum size of meteors
-    public float maxSize = 5f;     // Maximum size of meteors
-    public float minMass = 1f;     // Minimum mass of meteors
-    public float maxMass = 40f;    // Maximum mass of meteors
+    public GameObject meteorPrefab;   // Reference to the meteor prefab
+    public float minSize = 0.5f;      // Minimum size of meteors
+    public float maxSize = 5f;        // Maximum size of meteors
+    public float minMass = 1f;        // Minimum mass of meteors
+    public float maxMass = 40f;       // Maximum mass of meteors
     public float launchForce = 2300f; // Force applied to launch meteors
+    public float launchDelayMin = 1f; // Minimum delay between launches
+    public float launchDelayMax = 7f; // Maximum delay between launches
+
+    public float planetGravityMultiplier = 2f; // Multiplier for gravity when meteor enters a planet's atmosphere
 
     void Start()
     {
@@ -17,16 +21,18 @@ public class MeteorLauncher : MonoBehaviour
 
     IEnumerator Launcher()
     {
-        yield return new WaitForSeconds(Random.Range(0, 7));
-
-        yield return StartCoroutine(LaunchMeteor());
+        while (true)
+        {
+            yield return new WaitForSeconds(Random.Range(launchDelayMin, launchDelayMax));
+            LaunchMeteor();
+        }
     }
 
-    IEnumerator LaunchMeteor()
+    void LaunchMeteor()
     {
         // Instantiate a new meteor at the launcher's position
-        var position = new Vector3(transform.position.x + Random.Range(-10.0f, 10.0f), transform.position.z, transform.position.z + Random.Range(-10.0f, 10.0f));
-        GameObject meteor = Instantiate(meteorPrefab, position, transform.rotation);
+        Vector3 position = new Vector3(transform.position.x + Random.Range(-10.0f, 10.0f), transform.position.y, transform.position.z + Random.Range(-10.0f, 10.0f));
+        GameObject meteor = Instantiate(meteorPrefab, position, Quaternion.identity);
 
         // Randomize the size of the meteor
         float size = Random.Range(minSize, maxSize);
@@ -37,10 +43,42 @@ public class MeteorLauncher : MonoBehaviour
         Rigidbody rb = meteor.GetComponent<Rigidbody>();
         rb.mass = mass;
 
-
-        // Apply a force to launch the meteor
-        Vector3 launchDirection = transform.forward;  // Adjust as needed for desired launch direction
+        // Randomize launch direction
+        Vector3 launchDirection = new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(0.0f, 1.0f), Random.Range(-1.0f, 1.0f)).normalized;
         rb.AddForce(launchDirection * launchForce);
-        yield return StartCoroutine(Launcher());
+
+        // Add PlanetGravity script to handle gravitational interactions
+        meteor.AddComponent<PlanetGravity>().gravityMultiplier = planetGravityMultiplier;
+    }
+}
+
+public class PlanetGravity : MonoBehaviour
+{
+    public float gravityMultiplier = 2f; // Gravity multiplier for planet's atmosphere
+    private Rigidbody rb;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Solor"))
+        {
+            // Adjust gravity when entering a planet's atmosphere
+            rb.useGravity = true;
+            rb.mass *= gravityMultiplier;
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Solor"))
+        {
+            // Reset gravity when leaving the planet's atmosphere
+            rb.useGravity = false;
+            rb.mass /= gravityMultiplier;
+        }
     }
 }
